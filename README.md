@@ -76,23 +76,24 @@ Set `TRUSTPILOT_URL` in Cell 1 to any Trustpilot company page and run all cells.
 
 ## Example Output
 
-**Sentiment distribution (500 reviews, WeBuyAnyCar USA):**
+*Run on WeBuyAnyCar USA — 185 reviews (1-star filter), March 2026*
 
-| Sentiment | Count | % |
-|---|---|---|
-| Negative | 310 | 62% |
-| Neutral | 85 | 17% |
-| Positive | 105 | 21% |
+![Sentiment Distribution](assets/sentiment_distribution.png)
 
-**Top themes:**
-- `pricing transparency` — negative skew — Customers report offer prices dropping significantly at the in-person appointment versus the online estimate
-- `customer service` — mixed — Interactions vary widely by location; some agents praised for professionalism, others flagged for pressure tactics
-- `wait times` — negative skew — Long waits at drop-off cited frequently as friction in the selling process
+![Topic Breakdown](assets/topic_breakdown.png)
+
+![Rating Trend](assets/rating_trend.png)
+
+**Top themes Claude identified:**
+- `staff professionalism` — positive skew — Named reps consistently praised for transparency and no-pressure approach; high variance between locations
+- `mobile service convenience` — positive skew — At-home appraisal model is a standout differentiator customers highlight unprompted
+- `bait and switch pricing` — negative skew — Customers report online quotes significantly higher than in-person offers with no clear explanation
+- `process transparency` — mixed — Smooth when reps walk through the inspection; frustrating when they don't
 
 **PM Recommendations (Claude-generated):**
-1. Introduce price lock guarantee: the gap between online estimate and final offer is the single largest driver of negative reviews — a 72-hour price lock would directly address this
-2. Standardize agent training: positive reviews are almost always location-specific, suggesting inconsistent service standards across branches
-3. Add real-time queue visibility: friction at drop-off is partially a communication failure — showing estimated wait time at booking reduces the surprise
+1. Replace peak-estimate online quotes with a realistic range and condition factors upfront — directly kills the #1 driver of 1-star reviews
+2. Standardize the inspection walkthrough as a required step — best reps already do this; codify it to reduce experience variance across locations
+3. Introduce appointment reliability SLAs with accountability tracking — canceled/no-show appointments appear repeatedly in negative reviews
 
 ---
 
