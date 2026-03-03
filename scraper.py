@@ -52,20 +52,21 @@ class TrustpilotScraper:
     def _extract_reviews(self, soup: BeautifulSoup) -> list:
         reviews = []
 
-        # Try data attribute first, then class-based fallbacks
-        cards = soup.find_all("div", attrs={"data-service-review-card-paper": True})
-        if not cards:
-            cards = soup.find_all("div", class_=lambda c: c and "reviewCard" in c)
-        if not cards:
-            cards = soup.find_all("article")
+        cards = soup.find_all("article", attrs={"data-service-review-card-paper": True})
 
         for card in cards:
             try:
-                name_el = card.find("span", class_=lambda c: c and "heading-xxs" in c)
-                reviewer = name_el.get_text(strip=True) if name_el else "Anonymous"
-
-                title_el = card.find("h2") or card.find("h3")
-                title = title_el.get_text(strip=True) if title_el else ""
+                # Reviewer name — find all CDS_Typography_appearance-default spans,
+                # skip the initials avatar (≤3 chars), take the first real name
+                name_spans = card.find_all(
+                    "span", class_=lambda c: c and "appearance-default" in c
+                )
+                reviewer = "Anonymous"
+                for span in name_spans:
+                    text = span.get_text(strip=True)
+                    if len(text) > 3:
+                        reviewer = text
+                        break
 
                 # Star rating from image alt text (e.g. "Rated 4 out of 5 stars")
                 rating = None
@@ -75,19 +76,22 @@ class TrustpilotScraper:
                     if match:
                         rating = int(match.group(1))
 
-                body_el = card.find("p", class_=lambda c: c and "body-l" in c)
-                body = body_el.get_text(strip=True) if body_el else ""
+                # Review body — Trustpilot removed separate titles; body is the full text
+                body_el = card.find("p", attrs={"data-relevant-review-text-typography": True})
+                if not body_el:
+                    body_el = card.find("p", class_=lambda c: c and "body-l" in c)
+                body = re.sub(r"\.{3}See more$", "", body_el.get_text(strip=True)).strip() if body_el else ""
 
+                # Company response
                 response_el = card.find("p", class_=lambda c: c and "message" in c)
                 company_response = response_el.get_text(strip=True) if response_el else ""
 
                 date_el = card.find("time")
                 date = date_el.get("datetime", "") if date_el else ""
 
-                if title or body:
+                if body:
                     reviews.append({
                         "reviewer": reviewer,
-                        "title": title,
                         "rating": rating,
                         "review": body,
                         "company_response": company_response,

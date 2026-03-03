@@ -1,13 +1,14 @@
 import json
 import math
 import os
+import re
 from typing import Optional, Tuple
 
 import pandas as pd
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 
 class ReviewAnalyzer:
@@ -27,11 +28,20 @@ class ReviewAnalyzer:
             raise EnvironmentError("ANTHROPIC_API_KEY not set. Copy .env.example to .env and add your key.")
         self.client = Anthropic(api_key=api_key)
 
+    def _parse_json(self, text: str):
+        """Parse JSON that may be wrapped in a markdown code fence."""
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+            if match:
+                return json.loads(match.group(1))
+            return {}
+
     def _tag_batch(self, reviews: list) -> list:
         """Send a batch of reviews to Claude Haiku for sentiment + topic tagging."""
         numbered = "\n\n".join(
             f"[{i+1}] Rating: {r.get('rating', '?')}/5\n"
-            f"Title: {r.get('title', '')}\n"
             f"Review: {r.get('review', '')}"
             for i, r in enumerate(reviews)
         )
@@ -56,8 +66,9 @@ class ReviewAnalyzer:
         )
 
         try:
-            return json.loads(message.content[0].text)
-        except json.JSONDecodeError:
+            result = self._parse_json(message.content[0].text)
+            return result if isinstance(result, list) else []
+        except Exception:
             return [
                 {"index": i + 1, "sentiment": "neutral", "topic": "unknown", "key_point": ""}
                 for i in range(len(reviews))
@@ -124,8 +135,8 @@ class ReviewAnalyzer:
         )
 
         try:
-            return json.loads(message.content[0].text)
-        except json.JSONDecodeError:
+            return self._parse_json(message.content[0].text)
+        except Exception:
             return {}
 
     def analyze(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
